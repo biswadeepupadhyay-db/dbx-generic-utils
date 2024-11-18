@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import getpass
 import boto3
 
 sys.path.append("./cloud/aws/auth")
@@ -44,6 +45,28 @@ def upload_to_s3(s3_client : boto3.Session.client,
                 except Exception as e:
                     print(f"Error uploading {local_file_path}: {str(e)}")
 
+
+def redact_input(prompt, redact_char='*', show_last_n=0):
+    """
+    Get input from user and return a redacted version.
+
+    :param prompt: The prompt to display to the user
+    :param redact_char: Character to use for redaction (default '*')
+    :param show_last_n: Number of characters to show at the end (default 4)
+    :return: Tuple of (original input, redacted input)
+    """
+    # Get input without showing it on the screen
+    user_input = getpass.getpass(prompt)
+
+    # Redact the input
+    if len(user_input) <= show_last_n:
+        redacted = redact_char * len(user_input)
+    else:
+        redacted = redact_char * (len(user_input) - show_last_n) + user_input[-show_last_n:]
+
+    return user_input, redacted
+
+
 var_auth_method = input("Select your Auth Method to AWS:\n1. SSO\n2. Access Keys\n[Choose between (1) & (2)] [Default: (1)]:") or "1"
 
 var_local_path = input("Local file or Directory path: ")
@@ -71,9 +94,9 @@ if var_auth_method == "1":
                  s3_key=var_s3_key)
 
 else:
-    aws_access_key_id = input("Enter your AWS Access Key ID: ")
-    aws_secret_access_key = input("Enter your AWS Secret Access Key: ")
-    aws_session_token = input("Enter your AWS Session Token: [Default: None]: ") or None
+    aws_access_key_id, redacted_id = redact_input("Enter your AWS Access Key ID: ")
+    aws_secret_access_key, redacted_key = redact_input("Enter your AWS Secret Access Key: ")
+    aws_session_token, redacted_token = redact_input("Enter your AWS Session Token: [Default: None]: ") or None
 
     s3_client = boto3.client("s3"
                              , aws_access_key_id=aws_access_key_id,
