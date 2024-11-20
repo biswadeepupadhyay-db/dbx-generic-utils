@@ -1,0 +1,18 @@
+{
+  "auth_method" : "access_keys",
+  "auth" : {
+    "sso" : {
+      "sso_profile_name" : "",
+      "default_region" : ""
+    },
+    "access_keys" : {
+      "access_key_id" : "",
+      "secret_access_key" : "",
+      "session_token" : ""
+    }
+  },
+  "is_directory" : false,
+  "local_file_path" : "",
+  "bucket_name" : "",
+  "s3_prefix" : ""
+}

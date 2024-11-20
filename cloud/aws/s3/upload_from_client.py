@@ -2,10 +2,19 @@ import os
 import sys
 import json
 import getpass
+import logging
+
 import boto3
 
-sys.path.append("./cloud/aws/auth")
-import logging
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PYTHON_PATH = os.path.sep.join(SCRIPT_DIR.split(os.path.sep)[:-3])
+sys.path.append(PYTHON_PATH)
+
+from cloud.utils import read_json_file
+
+
+CONFIG_PATH = f"{PYTHON_PATH}/cloud/aws/s3/config/upload_files.json"
+UPLOAD_CONFIG = read_json_file(CONFIG_PATH)
 
 
 def upload_to_s3(s3_client : boto3.Session.client,
@@ -82,7 +91,7 @@ if var_auth_method == "1":
     aws_profile_name = input("Enter your AWS Profile Name: You can find that inside `~/.aws/config`: ") or None
     if not aws_profile_name:
         raise ValueError("You must enter your AWS Profile Name.")
-    from sso import set_aws_creds
+    from cloud.aws.auth.sso import set_aws_creds
 
     set_aws_creds(aws_profile_name, verbose=True)
 
