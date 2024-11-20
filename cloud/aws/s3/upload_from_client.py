@@ -2,10 +2,19 @@ import os
 import sys
 import json
 import getpass
+import logging
+
 import boto3
 
-sys.path.append("./cloud/aws/auth")
-import logging
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PYTHON_PATH = os.path.sep.join(SCRIPT_DIR.split(os.path.sep)[:-3])
+sys.path.append(PYTHON_PATH)
+
+from cloud.utils import read_json_file
+
+
+CONFIG_PATH = f"{PYTHON_PATH}/cloud/aws/s3/config/upload_files.json" if len(sys.argv) == 1 else sys.argv[1]
+UPLOAD_CONFIG = read_json_file(CONFIG_PATH)
 
 
 def upload_to_s3(s3_client : boto3.Session.client,
@@ -67,22 +76,25 @@ def redact_input(prompt, redact_char='*', show_last_n=0):
     return user_input, redacted
 
 
-var_auth_method = input("Select your Auth Method to AWS:\n1. SSO\n2. Access Keys\n[Choose between (1) & (2)] [Default: (1)]:") or "1"
+var_auth_method = "access_keys" if not UPLOAD_CONFIG.get("auth_method", "").strip() else UPLOAD_CONFIG.get("auth_method", "").strip().lower()
 
-var_local_path = input("Local file or Directory path: ")
-var_directory_input = input("Is your local path a directory? [Default: 'no']: ") or "no"
-var_directory_flag = False if var_directory_input.lower() == "no" else True
-var_bucket_name = input("S3 bucket name: ")
-var_s3_key = input("S3 key prefix: [Default: '']: ") or ''
+var_local_path = UPLOAD_CONFIG.get("local_files_path", "").strip()
+if not var_local_path:
+    raise Exception("No local file/directory path specified. Mention the same in config file against `local_files_path`.")
+var_directory_flag = False if not UPLOAD_CONFIG.get("is_directory", False) else True
+var_bucket_name = UPLOAD_CONFIG.get("bucket_name", "")
+if not var_bucket_name:
+    raise Exception("No bucket name specified. Mention the same in config file against `bucket_name`.")
+var_s3_key = UPLOAD_CONFIG.get("s3_prefix", "").strip()
 
 
-if var_auth_method == "1":
-    AWS_DEFAULT_REGION = input("Enter your default AWS Region: [Default: us-east-1]: ") or "us-east-1"
+if var_auth_method == "sso":
+    AWS_DEFAULT_REGION = UPLOAD_CONFIG["auth"]["sso"]["default_region"] or "us-east-1"
     os.environ["AWS_DEFAULT_REGION"] = AWS_DEFAULT_REGION
-    aws_profile_name = input("Enter your AWS Profile Name: You can find that inside `~/.aws/config`: ") or None
+    aws_profile_name = UPLOAD_CONFIG["auth"]["sso"]["sso_profile_name"] or None
     if not aws_profile_name:
-        raise ValueError("You must enter your AWS Profile Name.")
-    from sso import set_aws_creds
+        raise ValueError("You must enter your AWS Profile Name under `auth.sso.sso_profile_name`.")
+    from cloud.aws.auth.sso import set_aws_creds
 
     set_aws_creds(aws_profile_name, verbose=True)
 
@@ -94,9 +106,16 @@ if var_auth_method == "1":
                  s3_key=var_s3_key)
 
 else:
-    aws_access_key_id, redacted_id = redact_input("Enter your AWS Access Key ID: ")
-    aws_secret_access_key, redacted_key = redact_input("Enter your AWS Secret Access Key: ")
-    aws_session_token, redacted_token = redact_input("Enter your AWS Session Token: [Default: None]: ") or None
+    # aws_access_key_id, redacted_id = redact_input("Enter your AWS Access Key ID: ")
+    # aws_secret_access_key, redacted_key = redact_input("Enter your AWS Secret Access Key: ")
+    # aws_session_token, redacted_token = redact_input("Enter your AWS Session Token: [Default: None]: ") or None
+
+    aws_access_key_id = UPLOAD_CONFIG["auth"]["access_keys"]["access_key_id"]
+    aws_secret_access_key = UPLOAD_CONFIG["auth"]["access_keys"]["secret_access_key"]
+    aws_session_token = UPLOAD_CONFIG["auth"]["access_keys"]["session_token"]
+
+    if not aws_access_key_id or not aws_secret_access_key:
+        raise Exception("Access keys are missing in the config file.")
 
     s3_client = boto3.client("s3"
                              , aws_access_key_id=aws_access_key_id,
