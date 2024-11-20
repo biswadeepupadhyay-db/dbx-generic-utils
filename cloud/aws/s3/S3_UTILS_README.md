@@ -118,7 +118,7 @@ the uploaded s3 file uri would look like `s3://<s3-bucket>/dev/solutions/raw/fil
 ```json
 {
   ...
-  "is_directory" : false,
+  "is_directory" : true,
   "local_files_path" : "./path/to/your/directory/",
   "bucket_name" : "s3-bucket",
   "s3_prefix" : "dev/solutions/raw"
