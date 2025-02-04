@@ -6,13 +6,13 @@
       "default_region" : ""
     },
     "access_keys" : {
-      "access_key_id" : "",
-      "secret_access_key" : "",
-      "session_token" : ""
+      "access_key_id" : "aws-access-key-id",
+      "secret_access_key" : "aws-access-key",
+      "session_token" : "aws-session-token"
     }
   },
   "is_directory" : false,
-  "local_file_path" : "",
-  "bucket_name" : "",
-  "s3_prefix" : ""
+  "local_files_path" : "/Users/biswadeep.upadhyay/Documents/dbrx-workspace-public/dbrx_gen_utilities/local_files/file1.csv",
+  "bucket_name" : "beepz-copa-airlines-poc-v1",
+  "s3_prefix" : "dev/solutions/raw/test4-file"
 }
